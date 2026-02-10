@@ -18,7 +18,7 @@ Dead-man switch automation blueprint for Home Assistant that tracks activity and
 2. Create a new automation from the blueprint and configure inputs.
 
 Raw import URL (always use raw, not GitHub blob):
-https://raw.githubusercontent.com/desertdognl/Alive-Check-HA/main/alive_check.yaml?v=5
+https://raw.githubusercontent.com/desertdognl/Alive-Check-HA/main/alive_check.yaml?v=6
 
 If Home Assistant shows a YAML error like `--tab-size-preference`, it means a GitHub HTML page was imported. Use the raw URL above.
 
@@ -57,24 +57,24 @@ When using this blueprint, enter notifier services as plain service names (no ac
 
 ```yaml
 use_blueprint:
-	path: desertdognl/alive_check.yaml
-	input:
-		monitored_entities:
-			- binary_sensor.hallway_sensor_motion
-			- binary_sensor.corridor_sensor_motion
-		inactivity_timeout_hours: 10
-		send_telegram: true
-		send_mobile_app: true
-		send_email: false
-		timestamp_helper: input_datetime.last_alive_check
-		telegram_notifier: notify.me
-		mobile_app_notifier: notify.mobile_app_iphone_02
-		emergency_service: notify.sms_service
-		emergency_recipient: "+123456789"
+  path: desertdognl/alive_check.yaml
+  input:
+    monitored_entities:
+      - binary_sensor.hallway_sensor_motion
+      - binary_sensor.corridor_sensor_motion
+    inactivity_timeout_hours: 10
+    send_telegram: true
+    send_mobile_app: true
+    send_email: false
+    timestamp_helper: input_datetime.last_alive_check
+    telegram_notifier: notify.me
+    mobile_app_notifier: notify.mobile_app_iphone_02
+    emergency_service: notify.sms_service
+    emergency_recipient: "+123456789"
 ```
 
 ## Troubleshooting
-- Import error mentioning `--tab-size-preference`: you imported the GitHub HTML page. Use the raw URL with `?v=5`.
+- Import error mentioning `--tab-size-preference`: you imported the GitHub HTML page. Use the raw URL with `?v=6`.
 - Import error about `monitored_entities` selector: ensure you are using the raw URL, not a cached or blob URL.
 - No `notify.mobile_app_*` service: open the Home Assistant mobile app, log in, register the device, and enable notifications.
 - Telegram button does not acknowledge: confirm the Telegram integration is working and the callback event fires.
