@@ -28,18 +28,21 @@ blueprint:
           max: 720
           unit_of_measurement: min
           mode: slider
-    notification_method:
-      name: Primary Notification Method
-      default: mobile_app
+    send_mobile_app:
+      name: Send to Home Assistant mobile app
+      default: true
       selector:
-        select:
-          options:
-            - label: Home Assistant mobile app
-              value: mobile_app
-            - label: Telegram
-              value: telegram
-            - label: Email
-              value: email
+        boolean: {}
+    send_telegram:
+      name: Send to Telegram
+      default: false
+      selector:
+        boolean: {}
+    send_email:
+      name: Send to Email
+      default: false
+      selector:
+        boolean: {}
     mobile_app_notifier:
       name: Mobile App Notifier Service
       description: notify.mobile_app_* service to reach your phone.
@@ -58,6 +61,12 @@ blueprint:
     emergency_notifier:
       name: Emergency Contact Service
       description: The service to notify a friend/relative.
+      selector:
+        text: {}
+    emergency_target:
+      name: Emergency Target (Optional)
+      description: Phone number or email address if your notify service needs it.
+      default: ""
       selector:
         text: {}
     timestamp_helper:
@@ -96,7 +105,14 @@ trigger:
     entity_id: !input monitored_entities
 
 variables:
-  notification_method: !input notification_method
+  send_mobile_app: !input send_mobile_app
+  send_telegram: !input send_telegram
+  send_email: !input send_email
+  mobile_app_service: !input mobile_app_notifier
+  telegram_service: !input telegram_notifier
+  email_service: !input email_notifier
+  emergency_service: !input emergency_notifier
+  emergency_target: !input emergency_target
   ack_action: !input ack_action
   telegram_callback_data: !input telegram_callback_data
 
@@ -113,9 +129,9 @@ action:
   - choose:
       - conditions:
           - condition: template
-            value_template: "{{ notification_method == 'mobile_app' }}"
+            value_template: "{{ send_mobile_app and mobile_app_service != '' }}"
         sequence:
-          - service: !input mobile_app_notifier
+          - service: "{{ mobile_app_service }}"
             data:
               message: !input checkin_message
               data:
@@ -125,32 +141,36 @@ action:
                 tag: "alive_check"
                 ttl: 0
                 priority: high
-          - wait_for_trigger:
-              - platform: event
-                event_type: mobile_app_notification_action
-                event_data:
-                  action: "{{ ack_action }}"
-            timeout:
-              minutes: !input grace_period_minutes
-            continue_on_timeout: true
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ wait.trigger is not none }}"
-                sequence:
-                  - stop: "User acknowledged the check-in."
 
       - conditions:
           - condition: template
-            value_template: "{{ notification_method == 'telegram' }}"
+            value_template: "{{ send_telegram and telegram_service != '' }}"
         sequence:
-          - service: !input telegram_notifier
+          - service: "{{ telegram_service }}"
             data:
               message: !input checkin_message
               data:
                 inline_keyboard:
                   - "I'm OK:{{ telegram_callback_data }}"
+
+      - conditions:
+          - condition: template
+            value_template: "{{ send_email and email_service != '' }}"
+        sequence:
+          - service: "{{ email_service }}"
+            data:
+              message: !input checkin_message
+
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ (send_mobile_app and mobile_app_service != '') or (send_telegram and telegram_service != '') }}"
+        sequence:
           - wait_for_trigger:
+              - platform: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: "{{ ack_action }}"
               - platform: event
                 event_type: telegram_callback
                 event_data:
@@ -164,17 +184,26 @@ action:
                     value_template: "{{ wait.trigger is not none }}"
                 sequence:
                   - stop: "User acknowledged the check-in."
-
       - conditions:
           - condition: template
-            value_template: "{{ notification_method == 'email' }}"
+            value_template: "{{ send_email and email_service != '' }}"
         sequence:
-          - service: !input email_notifier
-            data:
-              message: !input checkin_message
           - delay:
               minutes: !input grace_period_minutes
 
-  - service: !input emergency_notifier
-    data:
-      message: !input emergency_message
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ emergency_target != '' }}"
+        sequence:
+          - service: "{{ emergency_service }}"
+            data:
+              message: !input emergency_message
+              target: "{{ emergency_target }}"
+      - conditions:
+          - condition: template
+            value_template: "{{ emergency_target == '' }}"
+        sequence:
+          - service: "{{ emergency_service }}"
+            data:
+              message: !input emergency_message
