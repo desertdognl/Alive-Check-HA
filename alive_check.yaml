@@ -1,181 +1,181 @@
 blueprint:
-	name: "I Am Alive - Dead Man Switch"
-	description: "Monitors activity and escalates if no response is received."
-	domain: automation
-	input:
-		monitored_entities:
-			name: Entities to monitor
-			description: Select motion sensors, locks, or doors that signal you are active.
-			selector:
-				target:
-					entity:
-						multiple: true
-		inactivity_timeout_hours:
-			name: Inactivity Timeout (Hours)
-			default: 24
-			selector:
-				number:
-					min: 1
-					max: 168
-					unit_of_measurement: h
-					mode: slider
-		grace_period_minutes:
-			name: Response Grace Period (Minutes)
-			description: Extra time to respond after the check-in is sent.
-			default: 60
-			selector:
-				number:
-					min: 5
-					max: 720
-					unit_of_measurement: min
-					mode: slider
-		notification_method:
-			name: Primary Notification Method
-			default: mobile_app
-			selector:
-				select:
-					options:
-						- label: Home Assistant mobile app
-							value: mobile_app
-						- label: Telegram
-							value: telegram
-						- label: Email
-							value: email
-		mobile_app_notifier:
-			name: Mobile App Notifier Service
-			description: notify.mobile_app_* service to reach your phone.
-			selector:
-				action: {}
-		telegram_notifier:
-			name: Telegram Notifier Service
-			description: notify.telegram_* service for Telegram.
-			selector:
-				action: {}
-		email_notifier:
-			name: Email Notifier Service
-			description: notify.* email service.
-			selector:
-				action: {}
-		emergency_notifier:
-			name: Emergency Contact Service
-			description: The service to notify a friend/relative.
-			selector:
-				action: {}
-		timestamp_helper:
-			name: Timestamp Helper
-			description: The input_datetime helper created in Step 1.
-			selector:
-				entity:
-					domain: input_datetime
-		checkin_message:
-			name: Check-in Message
-			default: "Are you OK? Please confirm within the grace period."
-			selector:
-				text: {}
-		emergency_message:
-			name: Emergency Message
-			default: "No response after the check-in. Please reach out."
-			selector:
-				text: {}
-		ack_action:
-			name: Acknowledge Action ID
-			description: Action string used by mobile app notifications.
-			default: "ALIVE_CHECK_ACK"
-			selector:
-				text: {}
-		telegram_callback_data:
-			name: Telegram Callback Data
-			description: Callback data for the Telegram button.
-			default: "alive_check_ack"
-			selector:
-				text: {}
+  name: "I Am Alive - Dead Man Switch"
+  description: "Monitors activity and escalates if no response is received."
+  domain: automation
+  input:
+    monitored_entities:
+      name: Entities to monitor
+      description: Select motion sensors, locks, or doors that signal you are active.
+      selector:
+        target:
+          entity:
+            multiple: true
+    inactivity_timeout_hours:
+      name: Inactivity Timeout (Hours)
+      default: 24
+      selector:
+        number:
+          min: 1
+          max: 168
+          unit_of_measurement: h
+          mode: slider
+    grace_period_minutes:
+      name: Response Grace Period (Minutes)
+      description: Extra time to respond after the check-in is sent.
+      default: 60
+      selector:
+        number:
+          min: 5
+          max: 720
+          unit_of_measurement: min
+          mode: slider
+    notification_method:
+      name: Primary Notification Method
+      default: mobile_app
+      selector:
+        select:
+          options:
+            - label: Home Assistant mobile app
+              value: mobile_app
+            - label: Telegram
+              value: telegram
+            - label: Email
+              value: email
+    mobile_app_notifier:
+      name: Mobile App Notifier Service
+      description: notify.mobile_app_* service to reach your phone.
+      selector:
+        action: {}
+    telegram_notifier:
+      name: Telegram Notifier Service
+      description: notify.telegram_* service for Telegram.
+      selector:
+        action: {}
+    email_notifier:
+      name: Email Notifier Service
+      description: notify.* email service.
+      selector:
+        action: {}
+    emergency_notifier:
+      name: Emergency Contact Service
+      description: The service to notify a friend/relative.
+      selector:
+        action: {}
+    timestamp_helper:
+      name: Timestamp Helper
+      description: The input_datetime helper created in Step 1.
+      selector:
+        entity:
+          domain: input_datetime
+    checkin_message:
+      name: Check-in Message
+      default: "Are you OK? Please confirm within the grace period."
+      selector:
+        text: {}
+    emergency_message:
+      name: Emergency Message
+      default: "No response after the check-in. Please reach out."
+      selector:
+        text: {}
+    ack_action:
+      name: Acknowledge Action ID
+      description: Action string used by mobile app notifications.
+      default: "ALIVE_CHECK_ACK"
+      selector:
+        text: {}
+    telegram_callback_data:
+      name: Telegram Callback Data
+      description: Callback data for the Telegram button.
+      default: "alive_check_ack"
+      selector:
+        text: {}
 
 mode: restart
 
 trigger:
-	- platform: state
-		entity_id: !input monitored_entities
+  - platform: state
+    entity_id: !input monitored_entities
 
 variables:
-	notification_method: !input notification_method
-	ack_action: !input ack_action
-	telegram_callback_data: !input telegram_callback_data
+  notification_method: !input notification_method
+  ack_action: !input ack_action
+  telegram_callback_data: !input telegram_callback_data
 
 action:
-	- service: input_datetime.set_datetime
-		target:
-			entity_id: !input timestamp_helper
-		data:
-			datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+  - service: input_datetime.set_datetime
+    target:
+      entity_id: !input timestamp_helper
+    data:
+      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
 
-	- delay:
-			hours: !input inactivity_timeout_hours
+  - delay:
+      hours: !input inactivity_timeout_hours
 
-	- choose:
-			- conditions:
-					- condition: template
-						value_template: "{{ notification_method == 'mobile_app' }}"
-				sequence:
-					- service: !input mobile_app_notifier
-						data:
-							message: !input checkin_message
-							data:
-								actions:
-									- action: "{{ ack_action }}"
-										title: "I'm OK"
-								tag: "alive_check"
-								ttl: 0
-								priority: high
-					- wait_for_trigger:
-							- platform: event
-								event_type: mobile_app_notification_action
-								event_data:
-									action: "{{ ack_action }}"
-						timeout:
-							minutes: !input grace_period_minutes
-						continue_on_timeout: true
-					- choose:
-							- conditions:
-									- condition: template
-										value_template: "{{ wait.trigger is not none }}"
-								sequence:
-									- stop: "User acknowledged the check-in."
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ notification_method == 'mobile_app' }}"
+        sequence:
+          - service: !input mobile_app_notifier
+            data:
+              message: !input checkin_message
+              data:
+                actions:
+                  - action: "{{ ack_action }}"
+                    title: "I'm OK"
+                tag: "alive_check"
+                ttl: 0
+                priority: high
+          - wait_for_trigger:
+              - platform: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: "{{ ack_action }}"
+            timeout:
+              minutes: !input grace_period_minutes
+            continue_on_timeout: true
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ wait.trigger is not none }}"
+                sequence:
+                  - stop: "User acknowledged the check-in."
 
-			- conditions:
-					- condition: template
-						value_template: "{{ notification_method == 'telegram' }}"
-				sequence:
-					- service: !input telegram_notifier
-						data:
-							message: !input checkin_message
-							data:
-								inline_keyboard:
-									- "I'm OK:{{ telegram_callback_data }}"
-					- wait_for_trigger:
-							- platform: event
-								event_type: telegram_callback
-								event_data:
-									data: "{{ telegram_callback_data }}"
-						timeout:
-							minutes: !input grace_period_minutes
-						continue_on_timeout: true
-					- choose:
-							- conditions:
-									- condition: template
-										value_template: "{{ wait.trigger is not none }}"
-								sequence:
-									- stop: "User acknowledged the check-in."
+      - conditions:
+          - condition: template
+            value_template: "{{ notification_method == 'telegram' }}"
+        sequence:
+          - service: !input telegram_notifier
+            data:
+              message: !input checkin_message
+              data:
+                inline_keyboard:
+                  - "I'm OK:{{ telegram_callback_data }}"
+          - wait_for_trigger:
+              - platform: event
+                event_type: telegram_callback
+                event_data:
+                  data: "{{ telegram_callback_data }}"
+            timeout:
+              minutes: !input grace_period_minutes
+            continue_on_timeout: true
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ wait.trigger is not none }}"
+                sequence:
+                  - stop: "User acknowledged the check-in."
 
-			- conditions:
-					- condition: template
-						value_template: "{{ notification_method == 'email' }}"
-				sequence:
-					- service: !input email_notifier
-						data:
-							message: !input checkin_message
-					- delay:
-							minutes: !input grace_period_minutes
+      - conditions:
+          - condition: template
+            value_template: "{{ notification_method == 'email' }}"
+        sequence:
+          - service: !input email_notifier
+            data:
+              message: !input checkin_message
+          - delay:
+              minutes: !input grace_period_minutes
 
-	- service: !input emergency_notifier
-		data:
-			message: !input emergency_message
+  - service: !input emergency_notifier
+    data:
+      message: !input emergency_message
