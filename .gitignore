@@ -6,3 +6,4 @@ secrets.yaml
 *.sqlite
 .storage/
 backups/
+.github/copilot-instructions.md
