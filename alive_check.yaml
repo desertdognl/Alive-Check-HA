@@ -44,22 +44,22 @@ blueprint:
       name: Mobile App Notifier Service
       description: notify.mobile_app_* service to reach your phone.
       selector:
-        action: {}
+        text: {}
     telegram_notifier:
       name: Telegram Notifier Service
       description: notify.telegram_* service for Telegram.
       selector:
-        action: {}
+        text: {}
     email_notifier:
       name: Email Notifier Service
       description: notify.* email service.
       selector:
-        action: {}
+        text: {}
     emergency_notifier:
       name: Emergency Contact Service
       description: The service to notify a friend/relative.
       selector:
-        action: {}
+        text: {}
     timestamp_helper:
       name: Timestamp Helper
       description: The input_datetime helper created in Step 1.
