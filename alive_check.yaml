@@ -9,7 +9,7 @@ blueprint:
       selector:
         target:
           multiple: true
-          entity:
+          entity: {}
     inactivity_timeout_hours:
       name: Inactivity Timeout (Hours)
       default: 24
