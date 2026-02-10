@@ -8,8 +8,8 @@ blueprint:
       description: Select motion sensors, locks, or doors that signal you are active.
       selector:
         target:
+          multiple: true
           entity:
-            multiple: true
     inactivity_timeout_hours:
       name: Inactivity Timeout (Hours)
       default: 24
