@@ -7,9 +7,8 @@ blueprint:
       name: Entities to monitor
       description: Select motion sensors, locks, or doors that signal you are active.
       selector:
-        target:
+        entity:
           multiple: true
-          entity: {}
     inactivity_timeout_hours:
       name: Inactivity Timeout (Hours)
       default: 24
