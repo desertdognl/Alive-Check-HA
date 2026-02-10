@@ -58,14 +58,14 @@ blueprint:
       description: notify.* email service.
       selector:
         text: {}
-    emergency_notifier:
-      name: Emergency Contact Service
-      description: The service to notify a friend/relative.
+    emergency_service:
+      name: Emergency Notify Service (Email or SMS)
+      description: Notify service used to alert a friend/relative.
       selector:
         text: {}
-    emergency_target:
-      name: Emergency Target (Optional)
-      description: Phone number or email address if your notify service needs it.
+    emergency_recipient:
+      name: Emergency Recipient (Phone or Email)
+      description: The phone number or email address for the emergency contact.
       default: ""
       selector:
         text: {}
@@ -111,8 +111,8 @@ variables:
   mobile_app_service: !input mobile_app_notifier
   telegram_service: !input telegram_notifier
   email_service: !input email_notifier
-  emergency_service: !input emergency_notifier
-  emergency_target: !input emergency_target
+  emergency_service: !input emergency_service
+  emergency_recipient: !input emergency_recipient
   ack_action: !input ack_action
   telegram_callback_data: !input telegram_callback_data
 
@@ -194,16 +194,9 @@ action:
   - choose:
       - conditions:
           - condition: template
-            value_template: "{{ emergency_target != '' }}"
+            value_template: "{{ emergency_service != '' and emergency_recipient != '' }}"
         sequence:
           - service: "{{ emergency_service }}"
             data:
               message: !input emergency_message
-              target: "{{ emergency_target }}"
-      - conditions:
-          - condition: template
-            value_template: "{{ emergency_target == '' }}"
-        sequence:
-          - service: "{{ emergency_service }}"
-            data:
-              message: !input emergency_message
+              target: "{{ emergency_recipient }}"
