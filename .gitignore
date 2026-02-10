@@ -1,0 +1,8 @@
+.DS_Store
+.vscode/
+.env
+secrets.yaml
+*.log
+*.sqlite
+.storage/
+backups/
